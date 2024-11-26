@@ -107,11 +107,26 @@ function addToken(token) {
                 inCodeBlock = !inCodeBlock;
                 partialBackticks = '';
                 if (inCodeBlock) {
-                    // Beginning of code block
+                    // Create a wrapper div for the code block and language label
+                    const codeWrapper = document.createElement('div');
+                    codeWrapper.style.backgroundColor = '#1e1e1e'; // Dark background
+                    codeWrapper.style.borderRadius = '4px';
+                    codeWrapper.style.marginBottom = '1em';
+                    // Create language label div
+                    const languageLabel = document.createElement('div');
+                    languageLabel.style.padding = '4px 8px';
+                    languageLabel.style.color = '#ffffff';
+                    languageLabel.style.fontSize = '12px';
+                    // Create the pre element inside the wrapper
                     currentCodeBlockElement = document.createElement('pre');
-                    currentCodeBlockElement.style.backgroundColor = '#f4f4f4'; // Light gray for visibility
-                    currentContainer.appendChild(currentCodeBlockElement);
-                    languageBuffer = ''; // Reset language buffer
+                    currentCodeBlockElement.style.backgroundColor = '#1e1e1e';
+                    currentCodeBlockElement.style.margin = '0';
+                    currentCodeBlockElement.style.padding = '12px';
+                    currentCodeBlockElement.style.color = '#ffffff';
+                    codeWrapper.appendChild(languageLabel);
+                    codeWrapper.appendChild(currentCodeBlockElement);
+                    currentContainer.appendChild(codeWrapper);
+                    languageBuffer = '';
                 }
                 else {
                     // End of code block
@@ -151,6 +166,12 @@ function addToken(token) {
                     // Buffer characters until we hit a newline
                     if (char === '\n') {
                         codeBlockLanguage = languageBuffer.trim();
+                        // Update the language label text when we detect the language
+                        const wrapper = currentCodeBlockElement.parentElement;
+                        if (wrapper) {
+                            const label = wrapper.firstChild;
+                            label.textContent = `# ${codeBlockLanguage}`;
+                        }
                         languageBuffer = '';
                     }
                     else {
