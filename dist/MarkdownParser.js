@@ -7,6 +7,10 @@ const blogpostMarkdown = `# control
 
 \`\`\`bash
 git clone git@github.com:anysphere/control
+git clone git@github.com:anysphere/control
+git clone git@github.com:anysphere/control
+git clone git@github.com:anysphere/control
+git clone git@github.com:anysphere/control
 \`\`\`
 
 \`\`\`bash
@@ -81,6 +85,7 @@ let codeBlockBuffer = "";
 let inlineCodeBuffer = "";
 let partialBackticks = ""; // To track incomplete backticks
 let codeBlockLanguage = ""; // To store code block language if specified
+let languageBuffer = ""; // Add this with other state variables at the top
 let currentCodeBlockElement = null; // Reference to the current <pre> element
 let currentInlineCodeElement = null; // Reference to the current <code> element
 function addToken(token) {
@@ -106,21 +111,14 @@ function addToken(token) {
                     currentCodeBlockElement = document.createElement('pre');
                     currentCodeBlockElement.style.backgroundColor = '#f4f4f4'; // Light gray for visibility
                     currentContainer.appendChild(currentCodeBlockElement);
-                    // Check for language specifier
-                    let lang = '';
-                    let j = i;
-                    while (j < token.length && token[j] !== '\n') {
-                        lang += token[j];
-                        j++;
-                    }
-                    i = j;
-                    codeBlockLanguage = lang.trim();
+                    languageBuffer = ''; // Reset language buffer
                 }
                 else {
                     // End of code block
                     currentCodeBlockElement = null;
                     codeBlockBuffer = '';
                     codeBlockLanguage = '';
+                    languageBuffer = ''; // Reset language buffer
                 }
             }
             else if (partialBackticks === '`') {
@@ -149,6 +147,18 @@ function addToken(token) {
         // Not dealing with backticks, handle content
         if (inCodeBlock) {
             if (currentCodeBlockElement) {
+                if (codeBlockLanguage === '') {
+                    // Buffer characters until we hit a newline
+                    if (char === '\n') {
+                        codeBlockLanguage = languageBuffer.trim();
+                        languageBuffer = '';
+                    }
+                    else {
+                        languageBuffer += char;
+                        i++;
+                        continue;
+                    }
+                }
                 // Append character to the current <pre> element
                 currentCodeBlockElement.innerText += char;
             }
