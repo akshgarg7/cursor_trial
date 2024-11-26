@@ -1,3 +1,4 @@
+"use strict";
 const blogpostMarkdown = `# control
 
 *humans should focus on bigger problems*
@@ -50,15 +51,13 @@ git push origin build-todesktop
 - Wait for 14 minutes for gulp and ~30 minutes for todesktop
 - Go to todesktop.com, test the build locally and hit release
 `;
-
-let currentContainer: HTMLElement | null = null; 
+let currentContainer = null;
 // Do not edit this method
 function runStream() {
-    currentContainer = document.getElementById('markdownContainer')!;
-
+    currentContainer = document.getElementById('markdownContainer');
     // this randomly split the markdown into tokens between 2 and 20 characters long
     // simulates the behavior of an ml model thats giving you weirdly chunked tokens
-    const tokens: string[] = [];
+    const tokens = [];
     let remainingMarkdown = blogpostMarkdown;
     while (remainingMarkdown.length > 0) {
         const tokenLength = Math.floor(Math.random() * 18) + 2;
@@ -66,64 +65,63 @@ function runStream() {
         tokens.push(token);
         remainingMarkdown = remainingMarkdown.slice(tokenLength);
     }
-
     const toCancel = setInterval(() => {
         const token = tokens.shift();
         if (token) {
             addToken(token);
-        } else {
+        }
+        else {
             clearInterval(toCancel);
         }
     }, 20);
 }
-
 // Parser states
-enum ParserState {
-    NORMAL,
-    INLINE_CODE,
-    CODE_BLOCK,
-    POTENTIAL_CODE_BLOCK // For handling partial triple backticks
-}
-
+var ParserState;
+(function (ParserState) {
+    ParserState[ParserState["NORMAL"] = 0] = "NORMAL";
+    ParserState[ParserState["INLINE_CODE"] = 1] = "INLINE_CODE";
+    ParserState[ParserState["CODE_BLOCK"] = 2] = "CODE_BLOCK";
+    ParserState[ParserState["POTENTIAL_CODE_BLOCK"] = 3] = "POTENTIAL_CODE_BLOCK"; // For handling partial triple backticks
+})(ParserState || (ParserState = {}));
 // Global state
 let currentState = ParserState.NORMAL;
 let backtickCount = 0;
-let currentSpan: HTMLSpanElement | null = null;
-
-function addToken(token: string) {
-    if (!currentContainer) return;
-
+let currentSpan = null;
+function addToken(token) {
+    if (!currentContainer)
+        return;
     // Process the token character by character to handle state transitions
     for (let i = 0; i < token.length; i++) {
         const char = token[i];
-
         if (char === '`') {
             backtickCount++;
-            
             // Handle state transitions
             if (backtickCount === 3) {
                 // Complete triple backtick
                 backtickCount = 0;
                 if (currentState === ParserState.CODE_BLOCK) {
                     currentState = ParserState.NORMAL;
-                } else {
+                }
+                else {
                     currentState = ParserState.CODE_BLOCK;
                 }
                 currentSpan = null;
-            } else if (backtickCount === 1 && currentState === ParserState.NORMAL) {
+            }
+            else if (backtickCount === 1 && currentState === ParserState.NORMAL) {
                 // Start of inline code
                 currentState = ParserState.INLINE_CODE;
                 currentSpan = null;
-            } else if (backtickCount === 1 && currentState === ParserState.INLINE_CODE) {
+            }
+            else if (backtickCount === 1 && currentState === ParserState.INLINE_CODE) {
                 // End of inline code
                 currentState = ParserState.NORMAL;
                 currentSpan = null;
             }
-        } else {
+        }
+        else {
             // Reset backtick count if we see non-backtick character
             backtickCount = 0;
         }
-
         // Create new span if needed
         if (!currentSpan) {
             currentSpan = document.createElement('span');
@@ -131,7 +129,8 @@ function addToken(token: string) {
                 currentSpan.style.backgroundColor = '#f0f0f0';
                 currentSpan.style.fontFamily = 'monospace';
                 currentSpan.style.padding = '2px';
-            } else if (currentState === ParserState.CODE_BLOCK) {
+            }
+            else if (currentState === ParserState.CODE_BLOCK) {
                 currentSpan.style.backgroundColor = '#f5f5f5';
                 currentSpan.style.fontFamily = 'monospace';
                 currentSpan.style.display = 'block';
@@ -139,7 +138,6 @@ function addToken(token: string) {
             }
             currentContainer.appendChild(currentSpan);
         }
-
         // Add the character to current span
         currentSpan.innerText += char;
     }
