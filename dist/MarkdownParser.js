@@ -75,70 +75,104 @@ function runStream() {
         }
     }, 20);
 }
-// Parser states
-var ParserState;
-(function (ParserState) {
-    ParserState[ParserState["NORMAL"] = 0] = "NORMAL";
-    ParserState[ParserState["INLINE_CODE"] = 1] = "INLINE_CODE";
-    ParserState[ParserState["CODE_BLOCK"] = 2] = "CODE_BLOCK";
-    ParserState[ParserState["POTENTIAL_CODE_BLOCK"] = 3] = "POTENTIAL_CODE_BLOCK"; // For handling partial triple backticks
-})(ParserState || (ParserState = {}));
-// Global state
-let currentState = ParserState.NORMAL;
-let backtickCount = 0;
-let currentSpan = null;
+let inCodeBlock = false;
+let inInlineCode = false;
+let codeBlockBuffer = "";
+let inlineCodeBuffer = "";
+let partialBackticks = ""; // To track incomplete backticks
+let codeBlockLanguage = ""; // To store code block language if specified
+let currentCodeBlockElement = null; // Reference to the current <pre> element
+let currentInlineCodeElement = null; // Reference to the current <code> element
 function addToken(token) {
     if (!currentContainer)
         return;
-    // Process the token character by character to handle state transitions
-    for (let i = 0; i < token.length; i++) {
+    let i = 0;
+    while (i < token.length) {
         const char = token[i];
+        // Accumulate backticks to handle cases where backticks are split across tokens
         if (char === '`') {
-            backtickCount++;
-            // Handle state transitions
-            if (backtickCount === 3) {
-                // Complete triple backtick
-                backtickCount = 0;
-                if (currentState === ParserState.CODE_BLOCK) {
-                    currentState = ParserState.NORMAL;
+            partialBackticks += '`';
+            i++;
+            continue;
+        }
+        // If we have accumulated backticks, determine if we should enter or exit code
+        if (partialBackticks.length > 0) {
+            if (partialBackticks === '```') {
+                // Handle code block
+                inCodeBlock = !inCodeBlock;
+                partialBackticks = '';
+                if (inCodeBlock) {
+                    // Beginning of code block
+                    currentCodeBlockElement = document.createElement('pre');
+                    currentCodeBlockElement.style.backgroundColor = '#f4f4f4'; // Light gray for visibility
+                    currentContainer.appendChild(currentCodeBlockElement);
+                    // Check for language specifier
+                    let lang = '';
+                    let j = i;
+                    while (j < token.length && token[j] !== '\n') {
+                        lang += token[j];
+                        j++;
+                    }
+                    i = j;
+                    codeBlockLanguage = lang.trim();
                 }
                 else {
-                    currentState = ParserState.CODE_BLOCK;
+                    // End of code block
+                    currentCodeBlockElement = null;
+                    codeBlockBuffer = '';
+                    codeBlockLanguage = '';
                 }
-                currentSpan = null;
             }
-            else if (backtickCount === 1 && currentState === ParserState.NORMAL) {
-                // Start of inline code
-                currentState = ParserState.INLINE_CODE;
-                currentSpan = null;
+            else if (partialBackticks === '`') {
+                // Handle inline code
+                inInlineCode = !inInlineCode;
+                partialBackticks = '';
+                if (inInlineCode) {
+                    // Beginning of inline code
+                    currentInlineCodeElement = document.createElement('code');
+                    currentInlineCodeElement.style.backgroundColor = '#eef'; // Light blue for visibility
+                    currentContainer.appendChild(currentInlineCodeElement);
+                }
+                else {
+                    // End of inline code
+                    currentInlineCodeElement = null;
+                    inlineCodeBuffer = '';
+                }
             }
-            else if (backtickCount === 1 && currentState === ParserState.INLINE_CODE) {
-                // End of inline code
-                currentState = ParserState.NORMAL;
-                currentSpan = null;
+            else {
+                // Wait for more backticks if we have less than 3
+                i++;
+                continue;
+            }
+            continue;
+        }
+        // Not dealing with backticks, handle content
+        if (inCodeBlock) {
+            if (currentCodeBlockElement) {
+                // Append character to the current <pre> element
+                currentCodeBlockElement.innerText += char;
+            }
+            else {
+                // This shouldn't happen, but handle gracefully
+                codeBlockBuffer += char;
+            }
+        }
+        else if (inInlineCode) {
+            if (currentInlineCodeElement) {
+                // Append character to the current <code> element
+                currentInlineCodeElement.innerText += char;
+            }
+            else {
+                // This shouldn't happen, but handle gracefully
+                inlineCodeBuffer += char;
             }
         }
         else {
-            // Reset backtick count if we see non-backtick character
-            backtickCount = 0;
+            // Regular text
+            const span = document.createElement('span');
+            span.innerText = char;
+            currentContainer.appendChild(span);
         }
-        // Create new span if needed
-        if (!currentSpan) {
-            currentSpan = document.createElement('span');
-            if (currentState === ParserState.INLINE_CODE) {
-                currentSpan.style.backgroundColor = '#f0f0f0';
-                currentSpan.style.fontFamily = 'monospace';
-                currentSpan.style.padding = '2px';
-            }
-            else if (currentState === ParserState.CODE_BLOCK) {
-                currentSpan.style.backgroundColor = '#f5f5f5';
-                currentSpan.style.fontFamily = 'monospace';
-                currentSpan.style.display = 'block';
-                currentSpan.style.padding = '10px';
-            }
-            currentContainer.appendChild(currentSpan);
-        }
-        // Add the character to current span
-        currentSpan.innerText += char;
+        i++;
     }
 }
