@@ -78,7 +78,7 @@ function runStream() {
         } else {
             clearInterval(toCancel);
         }
-    }, 100);
+    }, 20);
 }
 
 let inCodeBlock = false;
@@ -116,7 +116,7 @@ function addToken(token: string) {
                 if (inCodeBlock) {
                     // Create a wrapper div for the code block and language label
                     const codeWrapper = document.createElement('div');
-                    codeWrapper.style.backgroundColor = '#1e1e1e'; // Dark background
+                    codeWrapper.style.backgroundColor = '#1e1e1e';
                     codeWrapper.style.borderRadius = '4px';
                     codeWrapper.style.marginBottom = '1em';
 
@@ -133,6 +133,13 @@ function addToken(token: string) {
                     currentCodeBlockElement.style.padding = '12px';
                     currentCodeBlockElement.style.color = '#ffffff';
 
+                    // Check if the next character is a newline - if so, use "plain text"
+                    if (i < token.length && token[i] === '\n') {
+                        codeBlockLanguage = 'plain text';
+                        languageLabel.textContent = '# plain text';
+                        i++; // Skip the newline
+                    }
+
                     codeWrapper.appendChild(languageLabel);
                     codeWrapper.appendChild(currentCodeBlockElement);
                     currentContainer.appendChild(codeWrapper);
@@ -142,7 +149,7 @@ function addToken(token: string) {
                     currentCodeBlockElement = null;
                     codeBlockBuffer = '';
                     codeBlockLanguage = '';
-                    languageBuffer = ''; // Reset language buffer
+                    languageBuffer = '';
                 }
             } else if (partialBackticks === '`') {
                 // Handle inline code
@@ -170,15 +177,25 @@ function addToken(token: string) {
         // Not dealing with backticks, handle content
         if (inCodeBlock) {
             if (currentCodeBlockElement) {
+                // console.log("inCodeBlock", char);
+                // if (char === '\n') {
+                //     console.log("newline");
+                // }
+
                 if (codeBlockLanguage === '') {
+                    // console.log("languageBuffer", languageBuffer);
                     // Buffer characters until we hit a newline
+                    console.log("char", char);
                     if (char === '\n') {
+                        console.log("entering the codeblock");
+                        console.log("languageBuffer", languageBuffer);
                         codeBlockLanguage = languageBuffer.trim();
                         // Update the language label text when we detect the language
                         const wrapper = currentCodeBlockElement.parentElement;
                         if (wrapper) {
                             const label = wrapper.firstChild as HTMLElement;
-                            label.textContent = `# ${codeBlockLanguage}`;
+                            // If no language was specified, use "plain text"
+                            label.textContent = codeBlockLanguage ? `# ${codeBlockLanguage}` : '# plain text';
                         }
                         languageBuffer = '';
                         i++; // Skip the newline character
