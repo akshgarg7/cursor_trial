@@ -122,7 +122,7 @@ function addToken(token) {
                     currentCodeBlockElement.style.backgroundColor = '#1e1e1e';
                     currentCodeBlockElement.style.margin = '0';
                     currentCodeBlockElement.style.padding = '12px';
-                    currentCodeBlockElement.style.color = '#ffffff';
+                    currentCodeBlockElement.style.color = '#3b82f6';
                     // Check if the next character is a newline - if so, use "plain text"
                     if (i < token.length && token[i] === '\n') {
                         codeBlockLanguage = 'plain text';
@@ -149,7 +149,8 @@ function addToken(token) {
                 if (inInlineCode) {
                     // Beginning of inline code
                     currentInlineCodeElement = document.createElement('code');
-                    currentInlineCodeElement.style.backgroundColor = '#eef'; // Light blue for visibility
+                    currentInlineCodeElement.style.backgroundColor = '#eef';
+                    currentInlineCodeElement.style.color = '#3b82f6';
                     currentContainer.appendChild(currentInlineCodeElement);
                 }
                 else {
