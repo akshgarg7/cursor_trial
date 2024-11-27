@@ -96,6 +96,7 @@ let currentInlineCodeElement: HTMLElement | null = null; // Reference to the cur
 let inHeading = false;
 let headingLevel = 0;
 let currentHeadingElement: HTMLHeadingElement | null = null;
+let hashBuffer = "";
 
 function addToken(token: string) {
     if (!currentContainer) return;
@@ -230,35 +231,53 @@ function addToken(token: string) {
             continue;
         }
 
-        // Now handle headings (only if we're not in any code section)
-        if (char === '#' && (!inHeading || headingLevel === 0)) {
-            inHeading = true;
-            headingLevel++;
+        // Handle heading detection
+        if (char === '#') {
+            if (!inHeading || hashBuffer === "") {
+                inHeading = true;
+                hashBuffer += '#';
+            } else if (inHeading) {
+                hashBuffer += '#';
+            }
             i++;
             continue;
         }
 
-        // If we're counting heading level and see a space, create the heading
+        // If we're in heading mode and see a space, create the heading
         if (inHeading && char === ' ') {
-            const heading = document.createElement(`h${headingLevel}`) as HTMLHeadingElement;
+            headingLevel = hashBuffer.length; // Set level based on buffered #s
+            console.log('Creating heading with buffered level:', headingLevel);
+            
+            const heading = document.createElement(`h${headingLevel}`);
+            
+            // Style based on heading level
+            switch(headingLevel) {
+                case 1:
+                    heading.style.fontSize = '2em';
+                    break;
+                case 2:
+                    heading.style.fontSize = '1.5em';
+                    break;
+                case 3:
+                    heading.style.fontSize = '1.17em';
+                    break;
+                case 4:
+                    heading.style.fontSize = '1em';
+                    break;
+                case 5:
+                    heading.style.fontSize = '0.83em';
+                    break;
+                case 6:
+                    heading.style.fontSize = '0.67em';
+                    break;
+            }
+            
             heading.style.fontWeight = 'bold';
-            heading.style.margin = '1em 0';
+            heading.style.margin = '1em 0 0.5em 0';
             currentContainer.appendChild(heading);
             currentHeadingElement = heading;
             inHeading = false;
-            i++;
-            continue;
-        }
-
-        // If we're counting heading level but see something else, it's not a heading
-        if (inHeading && char !== '#') {
-            // Not a real heading, output the # characters we collected
-            const text = '#'.repeat(headingLevel) + char;
-            const span = document.createElement('span');
-            span.innerText = text;
-            currentContainer.appendChild(span);
-            inHeading = false;
-            headingLevel = 0;
+            hashBuffer = ""; // Clear the buffer
             i++;
             continue;
         }
@@ -267,6 +286,7 @@ function addToken(token: string) {
         if (char === '\n') {
             inHeading = false;
             headingLevel = 0;
+            hashBuffer = ""; // Clear the buffer
             currentHeadingElement = null;
         }
 
