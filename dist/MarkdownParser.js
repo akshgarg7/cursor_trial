@@ -237,8 +237,7 @@ function addToken(token) {
         }
         // If we're in heading mode and see a space, create the heading
         if (inHeading && char === ' ') {
-            headingLevel = hashBuffer.length; // Set level based on buffered #s
-            console.log('Creating heading with buffered level:', headingLevel);
+            headingLevel = hashBuffer.length;
             const heading = document.createElement(`h${headingLevel}`);
             // Style based on heading level
             switch (headingLevel) {
@@ -262,11 +261,11 @@ function addToken(token) {
                     break;
             }
             heading.style.fontWeight = 'bold';
-            heading.style.margin = '1em 0 0.5em 0';
+            heading.style.margin = '0.0em 0 0.0em 0';
             currentContainer.appendChild(heading);
             currentHeadingElement = heading;
             inHeading = false;
-            hashBuffer = ""; // Clear the buffer
+            hashBuffer = "";
             i++;
             continue;
         }
