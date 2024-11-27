@@ -88,19 +88,23 @@ let codeBlockLanguage = ""; // To store code block language if specified
 let languageBuffer = ""; // Add this with other state variables at the top
 let currentCodeBlockElement = null; // Reference to the current <pre> element
 let currentInlineCodeElement = null; // Reference to the current <code> element
+// Add these with your other state variables
+let inHeading = false;
+let headingLevel = 0;
+let currentHeadingElement = null;
 function addToken(token) {
     if (!currentContainer)
         return;
     let i = 0;
     while (i < token.length) {
         const char = token[i];
-        // Accumulate backticks to handle cases where backticks are split across tokens
+        // Handle backticks first
         if (char === '`') {
             partialBackticks += '`';
             i++;
             continue;
         }
-        // If we have accumulated backticks, determine if we should enter or exit code
+        // Process accumulated backticks
         if (partialBackticks.length > 0) {
             if (partialBackticks === '```') {
                 // Handle code block
@@ -122,7 +126,7 @@ function addToken(token) {
                     currentCodeBlockElement.style.backgroundColor = '#1e1e1e';
                     currentCodeBlockElement.style.margin = '0';
                     currentCodeBlockElement.style.padding = '12px';
-                    currentCodeBlockElement.style.color = '#3b82f6';
+                    currentCodeBlockElement.style.color = '#ffffff';
                     // Check if the next character is a newline - if so, use "plain text"
                     if (i < token.length && token[i] === '\n') {
                         codeBlockLanguage = 'plain text';
@@ -149,8 +153,7 @@ function addToken(token) {
                 if (inInlineCode) {
                     // Beginning of inline code
                     currentInlineCodeElement = document.createElement('code');
-                    currentInlineCodeElement.style.backgroundColor = '#eef';
-                    currentInlineCodeElement.style.color = '#3b82f6';
+                    currentInlineCodeElement.style.backgroundColor = '#eef'; // Light blue for visibility
                     currentContainer.appendChild(currentInlineCodeElement);
                 }
                 else {
@@ -160,13 +163,12 @@ function addToken(token) {
                 }
             }
             else {
-                // Wait for more backticks if we have less than 3
                 i++;
                 continue;
             }
             continue;
         }
-        // Not dealing with backticks, handle content
+        // If we're in a code block or inline code, handle that first
         if (inCodeBlock) {
             if (currentCodeBlockElement) {
                 // console.log("inCodeBlock", char);
@@ -205,6 +207,8 @@ function addToken(token) {
                 // This shouldn't happen, but handle gracefully
                 codeBlockBuffer += char;
             }
+            i++;
+            continue;
         }
         else if (inInlineCode) {
             if (currentInlineCodeElement) {
@@ -215,9 +219,50 @@ function addToken(token) {
                 // This shouldn't happen, but handle gracefully
                 inlineCodeBuffer += char;
             }
+            i++;
+            continue;
+        }
+        // Now handle headings (only if we're not in any code section)
+        if (char === '#' && (!inHeading || headingLevel === 0)) {
+            inHeading = true;
+            headingLevel++;
+            i++;
+            continue;
+        }
+        // If we're counting heading level and see a space, create the heading
+        if (inHeading && char === ' ') {
+            const heading = document.createElement(`h${headingLevel}`);
+            heading.style.fontWeight = 'bold';
+            heading.style.margin = '1em 0';
+            currentContainer.appendChild(heading);
+            currentHeadingElement = heading;
+            inHeading = false;
+            i++;
+            continue;
+        }
+        // If we're counting heading level but see something else, it's not a heading
+        if (inHeading && char !== '#') {
+            // Not a real heading, output the # characters we collected
+            const text = '#'.repeat(headingLevel) + char;
+            const span = document.createElement('span');
+            span.innerText = text;
+            currentContainer.appendChild(span);
+            inHeading = false;
+            headingLevel = 0;
+            i++;
+            continue;
+        }
+        // Reset heading state at newline
+        if (char === '\n') {
+            inHeading = false;
+            headingLevel = 0;
+            currentHeadingElement = null;
+        }
+        // Add content to heading or normal text
+        if (currentHeadingElement) {
+            currentHeadingElement.innerText += char;
         }
         else {
-            // Regular text
             const span = document.createElement('span');
             span.innerText = char;
             currentContainer.appendChild(span);
