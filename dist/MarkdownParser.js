@@ -260,7 +260,13 @@ function addToken(token) {
         }
         // Add content to heading or normal text
         if (currentHeadingElement) {
-            currentHeadingElement.innerText += char;
+            // Preserve spaces in heading content
+            if (char === ' ') {
+                currentHeadingElement.innerHTML += '&nbsp;';
+            }
+            else {
+                currentHeadingElement.innerText += char;
+            }
         }
         else {
             const span = document.createElement('span');
