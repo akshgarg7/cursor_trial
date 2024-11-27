@@ -1,3 +1,4 @@
+// note to show that there is optimistic rendering, i expanded the code block below
 const blogpostMarkdown = `# control
 
 *humans should focus on bigger problems*
@@ -6,10 +7,9 @@ const blogpostMarkdown = `# control
 
 \`\`\`bash
 git clone git@github.com:anysphere/control
-git clone git@github.com:anysphere/control
-git clone git@github.com:anysphere/control
-git clone git@github.com:anysphere/control
-git clone git@github.com:anysphere/control
+this is extra dummy text that I am adding to show that there is optimistic rendering. 
+It keeps going on, and on, and on, and on, and on, and on, and on, and on, and on, and on,
+and on, and on, and on, and on, and on, and on, and on, and on, and on, and on, and on, 
 \`\`\`
 
 \`\`\`bash
@@ -199,10 +199,10 @@ function addToken(token: string) {
                 if (codeBlockLanguage === '') {
                     // console.log("languageBuffer", languageBuffer);
                     // Buffer characters until we hit a newline
-                    console.log("char", char);
+                    // console.log("char", char);
                     if (char === '\n') {
-                        console.log("entering the codeblock");
-                        console.log("languageBuffer", languageBuffer);
+                        // console.log("entering the codeblock");
+                        // console.log("languageBuffer", languageBuffer);
                         codeBlockLanguage = languageBuffer.trim();
                         // Update the language label text when we detect the language
                         const wrapper = currentCodeBlockElement.parentElement;
@@ -301,7 +301,7 @@ function addToken(token: string) {
         // If we're in heading mode and see a space, create the heading
         if (inHeading && char === ' ') {
             headingLevel = hashBuffer.length;
-            const heading = document.createElement(`h${headingLevel}`);
+            const heading = document.createElement(`h${headingLevel}`) as HTMLHeadingElement;
             
             // Style based on heading level
             switch(headingLevel) {
