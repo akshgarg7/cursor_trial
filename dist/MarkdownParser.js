@@ -77,7 +77,7 @@ function runStream() {
         else {
             clearInterval(toCancel);
         }
-    }, 20);
+    }, 100);
 }
 let inCodeBlock = false;
 let inInlineCode = false;
@@ -173,6 +173,8 @@ function addToken(token) {
                             label.textContent = `# ${codeBlockLanguage}`;
                         }
                         languageBuffer = '';
+                        i++; // Skip the newline character
+                        continue; // Don't add the newline to the content
                     }
                     else {
                         languageBuffer += char;
