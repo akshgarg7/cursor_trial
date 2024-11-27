@@ -98,6 +98,11 @@ let headingLevel = 0;
 let currentHeadingElement: HTMLHeadingElement | null = null;
 let hashBuffer = "";
 
+// Add these state variables at the top
+let inBold = false;
+let asteriskBuffer = "";
+let currentBoldElement: HTMLElement | null = null;
+
 function addToken(token: string) {
     if (!currentContainer) return;
 
@@ -231,6 +236,40 @@ function addToken(token: string) {
             continue;
         }
 
+        // Handle asterisks for bold text (add this before your heading detection)
+        if (char === '*') {
+            asteriskBuffer += '*';
+            if (asteriskBuffer === '**') {
+                // Toggle bold state
+                inBold = !inBold;
+                if (inBold) {
+                    // Start bold text
+                    currentBoldElement = document.createElement('strong');
+                    currentBoldElement.style.fontWeight = 'bold';
+                    currentContainer.appendChild(currentBoldElement);
+                } else {
+                    // End bold text
+                    currentBoldElement = null;
+                }
+                asteriskBuffer = ""; // Reset buffer
+            }
+            i++;
+            continue;
+        } else {
+            // If we see a non-asterisk but have a partial buffer,
+            // output the buffered asterisks as normal text
+            if (asteriskBuffer.length > 0) {
+                if (currentBoldElement) {
+                    currentBoldElement.innerText += asteriskBuffer;
+                } else {
+                    const span = document.createElement('span');
+                    span.innerText = asteriskBuffer;
+                    currentContainer.appendChild(span);
+                }
+                asteriskBuffer = "";
+            }
+        }
+
         // Handle heading detection
         if (char === '#') {
             if (!inHeading || hashBuffer === "") {
@@ -288,15 +327,22 @@ function addToken(token: string) {
             currentHeadingElement = null;
         }
 
-        // Add content to heading or normal text
-        if (currentHeadingElement) {
+        // Replace your existing content output logic with this:
+        if (currentBoldElement) {
+            // Preserve spaces in bold content
+            if (char === ' ') {
+                currentBoldElement.innerHTML += '&nbsp;';
+            } else {
+                currentBoldElement.innerText += char;
+            }
+        } else if (currentHeadingElement) {
             // Preserve spaces in heading content
             if (char === ' ') {
                 currentHeadingElement.innerHTML += '&nbsp;';
             } else {
                 currentHeadingElement.innerText += char;
             }
-        } else {
+        } else if (!inCodeBlock && !inInlineCode) {
             const span = document.createElement('span');
             span.innerText = char;
             currentContainer.appendChild(span);
