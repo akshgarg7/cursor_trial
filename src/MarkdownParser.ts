@@ -103,6 +103,10 @@ let inBold = false;
 let asteriskBuffer = "";
 let currentBoldElement: HTMLElement | null = null;
 
+// Add these state variables at the top with your other state variables
+let inItalic = false;
+let currentItalicElement: HTMLElement | null = null;
+
 function addToken(token: string) {
     if (!currentContainer) return;
 
@@ -236,19 +240,17 @@ function addToken(token: string) {
             continue;
         }
 
-        // Handle asterisks for bold text (add this before your heading detection)
+        // Handle asterisks for bold and italic text
         if (char === '*') {
             asteriskBuffer += '*';
             if (asteriskBuffer === '**') {
                 // Toggle bold state
                 inBold = !inBold;
                 if (inBold) {
-                    // Start bold text
                     currentBoldElement = document.createElement('strong');
                     currentBoldElement.style.fontWeight = 'bold';
                     currentContainer.appendChild(currentBoldElement);
                 } else {
-                    // End bold text
                     currentBoldElement = null;
                 }
                 asteriskBuffer = ""; // Reset buffer
@@ -256,11 +258,25 @@ function addToken(token: string) {
             i++;
             continue;
         } else {
+            // If we have a single asterisk in buffer, it's for italics
+            if (asteriskBuffer === '*') {
+                inItalic = !inItalic;
+                if (inItalic) {
+                    currentItalicElement = document.createElement('em');
+                    currentItalicElement.style.fontStyle = 'italic';
+                    currentContainer.appendChild(currentItalicElement);
+                } else {
+                    currentItalicElement = null;
+                }
+                asteriskBuffer = "";
+            }
             // If we see a non-asterisk but have a partial buffer,
             // output the buffered asterisks as normal text
             if (asteriskBuffer.length > 0) {
                 if (currentBoldElement) {
                     currentBoldElement.innerText += asteriskBuffer;
+                } else if (currentItalicElement) {
+                    currentItalicElement.innerText += asteriskBuffer;
                 } else {
                     const span = document.createElement('span');
                     span.innerText = asteriskBuffer;
@@ -327,13 +343,20 @@ function addToken(token: string) {
             currentHeadingElement = null;
         }
 
-        // Replace your existing content output logic with this:
+        // Update your content output logic to handle italics:
         if (currentBoldElement) {
             // Preserve spaces in bold content
             if (char === ' ') {
                 currentBoldElement.innerHTML += '&nbsp;';
             } else {
                 currentBoldElement.innerText += char;
+            }
+        } else if (currentItalicElement) {
+            // Preserve spaces in italic content
+            if (char === ' ') {
+                currentItalicElement.innerHTML += '&nbsp;';
+            } else {
+                currentItalicElement.innerText += char;
             }
         } else if (currentHeadingElement) {
             // Preserve spaces in heading content
