@@ -21,5 +21,8 @@
   "homepage": "https://github.com/anysphere/streaming-markdown-parser#readme",
   "devDependencies": {
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "marked": "^9.0.0"
   }
 }
